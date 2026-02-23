@@ -27,6 +27,83 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
+        // Participants section (list with remove buttons)
+        const participantsDiv = document.createElement("div");
+        participantsDiv.className = "participants";
+
+        const label = document.createElement("strong");
+        label.textContent = "Participants:";
+        participantsDiv.appendChild(label);
+
+        if (details.participants && details.participants.length) {
+          const ul = document.createElement("ul");
+          ul.className = "participants-list";
+
+          details.participants.forEach((p) => {
+            const li = document.createElement("li");
+            li.className = "participant-item";
+
+            const span = document.createElement("span");
+            span.className = "participant-email";
+            span.textContent = p;
+
+            const btn = document.createElement("button");
+            btn.className = "participant-remove";
+            btn.title = `Remove ${p}`;
+            btn.textContent = "✖";
+            btn.dataset.activity = name;
+            btn.dataset.email = p;
+
+            // Delete handler
+            btn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              const activityName = btn.dataset.activity;
+              const email = btn.dataset.email;
+
+              try {
+                const res = await fetch(`/activities/${encodeURIComponent(activityName)}/participants?email=${encodeURIComponent(email)}`, {
+                  method: "DELETE",
+                });
+
+                const json = await res.json();
+
+                if (res.ok) {
+                  messageDiv.textContent = json.message;
+                  messageDiv.className = "success";
+                  messageDiv.classList.remove("hidden");
+                  // Refresh activities to reflect change
+                  fetchActivities();
+                } else {
+                  messageDiv.textContent = json.detail || "Failed to remove participant";
+                  messageDiv.className = "error";
+                  messageDiv.classList.remove("hidden");
+                }
+
+                setTimeout(() => messageDiv.classList.add("hidden"), 4000);
+              } catch (err) {
+                console.error("Error removing participant:", err);
+                messageDiv.textContent = "Failed to remove participant.";
+                messageDiv.className = "error";
+                messageDiv.classList.remove("hidden");
+                setTimeout(() => messageDiv.classList.add("hidden"), 4000);
+              }
+            });
+
+            li.appendChild(span);
+            li.appendChild(btn);
+            ul.appendChild(li);
+          });
+
+          participantsDiv.appendChild(ul);
+        } else {
+          const pNo = document.createElement("p");
+          pNo.className = "no-participants";
+          pNo.textContent = "No participants yet";
+          participantsDiv.appendChild(pNo);
+        }
+
+        activityCard.appendChild(participantsDiv);
+
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
